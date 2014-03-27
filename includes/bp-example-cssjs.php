@@ -17,6 +17,6 @@ function bp_example_add_js() {
 	if ( $bp->current_component == $bp->example->slug )
 		wp_enqueue_script( 'bp-example-js', plugins_url( '/bp-example/js/general.js' ) );
 }
-add_action( 'template_redirect', 'bp_example_add_js', 1 );
+//add_action( 'template_redirect', 'bp_example_add_js', 1 );
 
 ?>

@@ -26,8 +26,8 @@ if ( !defined( 'ABSPATH' ) ) exit;
  * _e( 'This text will be translatable', 'bp-example' ); // Echos the first parameter value
  */
 
-if ( file_exists( BP_EXAMPLE_PLUGIN_DIR . '/languages/' . get_locale() . '.mo' ) )
-	load_textdomain( 'bp-example', BP_EXAMPLE_PLUGIN_DIR . '/languages/' . get_locale() . '.mo' );
+/*if ( file_exists( BP_EXAMPLE_PLUGIN_DIR . '/languages/' . get_locale() . '.mo' ) )
+	load_textdomain( 'bp-example', BP_EXAMPLE_PLUGIN_DIR . '/languages/' . get_locale() . '.mo' );*/
 
 /**
  * Implementation of BP_Component
@@ -66,7 +66,7 @@ class BP_Example_Component extends BP_Component {
 		parent::start(
 			'example',
 			__( 'Example', 'bp-example' ),
-			BP_EXAMPLE_PLUGIN_DIR
+			buddypress()->extend->skeleton->includes_dir
 		);
 
 		/**
@@ -159,21 +159,21 @@ class BP_Example_Component extends BP_Component {
 	 * @package BuddyPress_Skeleton_Component
 	 * @since 1.6
 	 */
-	function includes() {
+	function includes( $includes = array() ) {
 
 		// Files to include
 		$includes = array(
-			'includes/bp-example-actions.php',
-			'includes/bp-example-screens.php',
-			'includes/bp-example-filters.php',
-			'includes/bp-example-classes.php',
-			'includes/bp-example-activity.php',
-			'includes/bp-example-template.php',
-			'includes/bp-example-functions.php',
-			'includes/bp-example-notifications.php',
-			'includes/bp-example-widgets.php',
-			'includes/bp-example-cssjs.php',
-			'includes/bp-example-ajax.php'
+			'bp-example-actions.php',
+			'bp-example-screens.php',
+			'bp-example-filters.php',
+			'bp-example-classes.php',
+			'bp-example-activity.php',
+			'bp-example-template.php',
+			'bp-example-functions.php',
+			'bp-example-notifications.php',
+			'bp-example-widgets.php',
+			'bp-example-cssjs.php',
+			'bp-example-ajax.php'
 		);
 
 		parent::includes( $includes );
@@ -181,7 +181,7 @@ class BP_Example_Component extends BP_Component {
 		// As an example of how you might do it manually, let's include the functions used
 		// on the WordPress Dashboard conditionally:
 		if ( is_admin() || is_network_admin() ) {
-			include( BP_EXAMPLE_PLUGIN_DIR . '/includes/bp-example-admin.php' );
+			include( buddypress_skeleton_component()->includes_dir . 'bp-example-admin.php' );
 		}
 	}
 
@@ -229,7 +229,7 @@ class BP_Example_Component extends BP_Component {
 	 *
 	 * @global obj $bp BuddyPress's global object
 	 */
-	function setup_globals() {
+	function setup_globals( $args = array() ) {
 		global $bp;
 
 		// Defining the slug in this way makes it possible for site admins to override it
@@ -244,7 +244,7 @@ class BP_Example_Component extends BP_Component {
 		);
 
 		// Set up the $globals array to be passed along to parent::setup_globals()
-		$globals = array(
+		$args = array(
 			'slug'                  => BP_EXAMPLE_SLUG,
 			'root_slug'             => isset( $bp->pages->{$this->id}->slug ) ? $bp->pages->{$this->id}->slug : BP_EXAMPLE_SLUG,
 			'has_directory'         => true, // Set to false if not required
@@ -254,7 +254,7 @@ class BP_Example_Component extends BP_Component {
 		);
 
 		// Let BP_Component::setup_globals() do its work.
-		parent::setup_globals( $globals );
+		parent::setup_globals( $args );
 
 		// If your component requires any other data in the $bp global, put it there now.
 		$bp->{$this->id}->misc_data = '123';
@@ -270,17 +270,30 @@ class BP_Example_Component extends BP_Component {
 	 *
 	 * @global obj $bp
 	 */
-	function setup_nav() {
+	function setup_nav( $main_nav = array(), $sub_nav = array() ) {
 		// Add 'Example' to the main navigation
 		$main_nav = array(
-			'name' 		      => __( 'Example', 'bp-example' ),
-			'slug' 		      => bp_get_example_slug(),
-			'position' 	      => 80,
-			'screen_function'     => 'bp_example_screen_one',
+			'name' 		          => __( 'Example', 'bp-example' ),
+			'slug' 		          => bp_get_example_slug(),
+			'position' 	          => 80,
+			'screen_function'     => array( 'BuddyPress_Skeleton_Screens', 'screen_one' ),
 			'default_subnav_slug' => 'screen-one'
 		);
 
-		$example_link = trailingslashit( bp_loggedin_user_domain() . bp_get_example_slug() );
+		// Stop if there is no user displayed or logged in
+		if ( !is_user_logged_in() && !bp_displayed_user_id() )
+			return;
+
+		// Determine user to use
+		if ( bp_displayed_user_domain() ) {
+			$user_domain = bp_displayed_user_domain();
+		} elseif ( bp_loggedin_user_domain() ) {
+			$user_domain = bp_loggedin_user_domain();
+		} else {
+			return;
+		}
+
+		$example_link = trailingslashit( $user_domain . bp_get_example_slug() );
 
 		// Add a few subnav items under the main Example tab
 		$sub_nav[] = array(
@@ -288,7 +301,7 @@ class BP_Example_Component extends BP_Component {
 			'slug'            => 'screen-one',
 			'parent_url'      => $example_link,
 			'parent_slug'     => bp_get_example_slug(),
-			'screen_function' => 'bp_example_screen_one',
+			'screen_function' => array( 'BuddyPress_Skeleton_Screens', 'screen_one' ),
 			'position'        => 10
 		);
 
@@ -298,7 +311,7 @@ class BP_Example_Component extends BP_Component {
 			'slug'            => 'screen-two',
 			'parent_url'      => $example_link,
 			'parent_slug'     => bp_get_example_slug(),
-			'screen_function' => 'bp_example_screen_two',
+			'screen_function' => array( 'BuddyPress_Skeleton_Screens', 'screen_two' ),
 			'position'        => 20
 		);
 
@@ -309,14 +322,59 @@ class BP_Example_Component extends BP_Component {
 		// if your component needs a subsection under a user's Settings menu, add
 		// it like this. See bp_example_screen_settings_menu() for more info
 		bp_core_new_subnav_item( array(
-			'name' 		  => __( 'Example', 'bp-example' ),
-			'slug' 		  => 'example-admin',
+			'name' 		      => __( 'Example', 'bp-example' ),
+			'slug' 		      => 'example-admin',
 			'parent_slug'     => bp_get_settings_slug(),
 			'parent_url' 	  => trailingslashit( bp_loggedin_user_domain() . bp_get_settings_slug() ),
 			'screen_function' => 'bp_example_screen_settings_menu',
-			'position' 	  => 40,
+			'position' 	      => 40,
 			'user_has_access' => bp_is_my_profile() // Only the logged in user can access this on his/her profile
 		) );
+	}
+
+	/**
+	 * Set up the component entries in the WordPress Admin Bar.
+	 *
+	 * @see BP_Component::setup_nav() for a description of the $wp_admin_nav
+	 *      parameter array.
+	 */
+	public function setup_admin_bar( $wp_admin_nav = array() ) {
+		$bp = buddypress();
+
+		// Menus for logged in user
+		if ( is_user_logged_in() ) {
+
+			// Setup the logged in user variables
+			$user_domain   = bp_loggedin_user_domain();
+			$example_link = trailingslashit( $user_domain . bp_get_example_slug() );
+
+			// Add the "Example" sub menu
+			$wp_admin_nav[] = array(
+				'parent' => $bp->my_account_menu_id,
+				'id'     => 'my-account-' . $this->id,
+				'title'  => __( 'Example', 'bp-example' ),
+				'href'   => trailingslashit( $example_link )
+			);
+
+			// Personal
+			$wp_admin_nav[] = array(
+				'parent' => 'my-account-' . $this->id,
+				'id'     => 'my-account-' . $this->id . '-screen-one',
+				'title'  => __( 'Screen One', 'bp-example' ),
+				'href'   => trailingslashit( $example_link . 'screen-one' )
+			);
+
+			// Screen two
+			$wp_admin_nav[] = array(
+				'parent' => 'my-account-' . $this->id,
+				'id'     => 'my-account-' . $this->id . '-screen-two',
+				'title'  => __( 'Screen Two', 'bp-example' ),
+				'href'   => trailingslashit( $example_link . 'screen-two' )
+			);
+
+		}
+
+		parent::setup_admin_bar( $wp_admin_nav );
 	}
 
 	/**
@@ -388,7 +446,3 @@ function bp_example_load_core_component() {
 
 	$bp->example = new BP_Example_Component;
 }
-add_action( 'bp_loaded', 'bp_example_load_core_component' );
-
-
-?>

@@ -82,13 +82,13 @@ add_action( 'bp_notification_settings', 'bp_example_screen_notification_settings
  * Remove a screen notification for a user.
  */
 function bp_example_remove_screen_notifications() {
-	global $bp;
+	$bp = buddypress();
 
 	/**
 	 * When clicking on a screen notification, we need to remove it from the menu.
 	 * The following command will do so.
  	 */
-	bp_core_delete_notifications_for_user_by_type( $bp->loggedin_user->id, $bp->example->slug, 'new_high_five' );
+	bp_notifications_mark_notifications_by_type( bp_loggedin_user_id(), $bp->example->slug, 'new_high_five' );
 }
 add_action( 'bp_example_screen_one', 'bp_example_remove_screen_notifications' );
 add_action( 'xprofile_screen_display_profile', 'bp_example_remove_screen_notifications' );
@@ -107,31 +107,46 @@ add_action( 'xprofile_screen_display_profile', 'bp_example_remove_screen_notific
  * The recording is done by using bp_core_add_notification() which you can search for in this file for
  * examples of usage.
  */
-function bp_example_format_notifications( $action, $item_id, $secondary_item_id, $total_items ) {
-	global $bp;
+function bp_example_format_notifications( $action, $item_id, $secondary_item_id, $total_items, $format = 'string' ) {
+	$bp = buddypress();
 
 	switch ( $action ) {
 		case 'new_high_five':
 			/* In this case, $item_id is the user ID of the user who sent the high five. */
+			$user_url = trailingslashit( bp_core_get_user_domain( $item_id ) . $bp->profile->slug );
+			$user_fullname = bp_core_get_user_displayname( $item_id, false );
+			$title = $user_fullname .'\'s profile';
 
 			/***
 			 * We don't want a whole list of similar notifications in a users list, so we group them.
 			 * If the user has more than one action from the same component, they are counted and the
 			 * notification is rendered differently.
 			 */
-			if ( (int)$total_items > 1 ) {
-				return apply_filters( 'bp_example_multiple_new_high_five_notification', '<a href="' . $bp->loggedin_user->domain . $bp->example->slug . '/screen-one/" title="' . __( 'Multiple high-fives', 'bp-example' ) . '">' . sprintf( __( '%d new high-fives, multi-five!', 'bp-example' ), (int)$total_items ) . '</a>', $total_items );
+			if ( (int) $total_items > 1 ) {
+				$user_url = trailingslashit( $bp->loggedin_user->domain . $bp->example->slug . '/screen-one' );
+				$title = __( 'Multiple high-fives', 'bp-example' );
+				$text = sprintf( __( '%d new high-fives, multi-five!', 'bp-example' ), (int) $total_items );
+				$filter = 'bp_example_multiple_new_high_five_notification';
 			} else {
-				$user_fullname = bp_core_get_user_displayname( $item_id, false );
-				$user_url = bp_core_get_user_domain( $item_id );
-				return apply_filters( 'bp_example_single_new_high_five_notification', '<a href="' . $user_url . '?new" title="' . $user_fullname .'\'s profile">' . sprintf( __( '%s sent you a high-five!', 'bp-example' ), $user_fullname ) . '</a>', $user_fullname );
+				$text =  sprintf( __( '%s sent you a high-five!', 'bp-example' ), $user_fullname );
+				$filter = 'bp_example_single_new_high_five_notification';
 			}
+
 		break;
+	}
+
+	if ( 'string' == $format ) {
+		$return = apply_filters( $filter, '<a href="' . esc_url( $user_url ) . '" title="' . esc_attr( $title ) . '">' . esc_html( $text ) . '</a>', $user_url, (int) $total_items, $item_id, $secondary_item_id );
+	} else {
+		$return = apply_filters( $filter, array(
+			'text' => $text,
+			'link' => $user_url
+		), $user_url, (int) $total_items, $item_id, $secondary_item_id );
 	}
 
 	do_action( 'bp_example_format_notifications', $action, $item_id, $secondary_item_id, $total_items );
 
-	return false;
+	return $return;
 }
 
 /**
