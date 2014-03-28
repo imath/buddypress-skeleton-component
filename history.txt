@@ -1,3 +1,12 @@
+Version 1.7
+- Taking benefit of Theme Compat in components
+- WP Admin Nav
+- Use of new Notification functions
+- Drop of the BuddyPress help menu
+- Use of buddypress() instead of the global $bp
+- Skeleton class to load the plugin
+- Remove the Network:true plugin header
+
 Version 1.6.2 (??????????)
 --------------------------------------------------------------
 - Corrected path issue for load_textdomain

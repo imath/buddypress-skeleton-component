@@ -181,7 +181,7 @@ class BP_Example_Component extends BP_Component {
 		// As an example of how you might do it manually, let's include the functions used
 		// on the WordPress Dashboard conditionally:
 		if ( is_admin() || is_network_admin() ) {
-			include( buddypress_skeleton_component()->includes_dir . 'bp-example-admin.php' );
+			include( buddypress()->extend->skeleton->includes_dir . 'bp-example-admin.php' );
 		}
 	}
 
