@@ -6,6 +6,7 @@ Version 1.7
 - Use of buddypress() instead of the global $bp
 - Skeleton class to load the plugin
 - Remove the Network:true plugin header
+- create 1.7 branch
 
 Version 1.6.2 (??????????)
 --------------------------------------------------------------
